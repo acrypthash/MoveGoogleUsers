@@ -1,31 +1,32 @@
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
+function moveUsersToNewOU() {
+  // Replace NEW_OU_ID with the ID of the new OU you want to move the users to
+  var newOUId = 'NEW_OU_ID';
 
-# Replace with the path to your service account key file
-KEY_FILE_LOCATION = '/path/to/service_account.json'
+  // Replace USER_EMAIL_1, USER_EMAIL_2, ... with the email addresses of the users you want to move
+  var userEmails = ['USER_EMAIL_1', 'USER_EMAIL_2', ...];
 
-# Replace with the name of the user you want to move
-USER_EMAIL = 'user@example.com'
+  // Get the Admin Directory API service
+  var service = AdminDirectory.Users.list({
+    customer: 'my_customer',
+    maxResults: 500
+  });
 
-# Replace with the name of the target Organizational Unit
-TARGET_OU = '/new_ou'
+  // Loop through each user
+  var users = service.users;
+  for (var i = 0; i < users.length; i++) {
+    var user = users[i];
 
-# Build the credentials object
-credentials = service_account.Credentials.from_json_keyfile_name(
-    KEY_FILE_LOCATION,
-    ['https://www.googleapis.com/auth/admin.directory.user']
-)
+    // Check if the user's email is in the list of user emails to move
+    if (userEmails.indexOf(user.primaryEmail) > -1) {
+      // Get the current parent OU of the user
+      var oldOUId = user.orgUnitPath.split('/')[1];
 
-# Build the Admin SDK API client
-service = build('admin', 'directory_v1', credentials=credentials)
+      // Move the user to the new OU
+      user.orgUnitPath = '/' + newOUId;
+      AdminDirectory.Users.update(user, user.primaryEmail);
 
-# Get the current parent Organizational Unit of the user
-user = service.users().get(userKey=USER_EMAIL).execute()
-current_ou = user.get('orgUnitPath')
-
-# Update the user with the new parent Organizational Unit
-user['orgUnitPath'] = TARGET_OU
-service.users().update(userKey=USER_EMAIL, body=user).execute()
-
-print(f'User {USER_EMAIL} was moved from {current_ou} to {TARGET_OU}')
-
+      // Print a success message
+      Logger.log('Successfully moved user ' + user.primaryEmail + ' from ' + oldOUId + ' to ' + newOUId);
+    }
+  }
+}
